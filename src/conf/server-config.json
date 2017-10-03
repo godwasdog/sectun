@@ -1,0 +1,23 @@
+{
+  "device": "tun0",
+  "host": "0.0.0.0",
+  "port": "1234",
+  "net": "10.8.0.1/16",
+  "mtu": "1380",
+  "mode": "server",
+  "encrypt": "aes-128-cbc",
+  "encryptKey": "test-password",
+  "heartbeatInterval": "30",
+  "heartbeatTimeout": "60",
+  "transport": "kcp+heartbeat+encrypt+udp",
+  "upScript": "server_up.sh",
+  "downScript": "server_down.sh",
+  "kcp": {
+    "nodelay": "1",
+    "interval": "20",
+    "resend": "2",
+    "nc": "1",
+    "sndwnd": "1024",
+    "rcvwnd": "1024"
+  }
+}

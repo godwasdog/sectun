@@ -1,0 +1,23 @@
+{
+  "device": "tun0",
+  "host": "192.168.56.101",
+  "port": "1234",
+  "net": "10.8.0.2/16",
+  "mtu": "1380",
+  "mode": "client",
+  "encrypt": "aes-128-cbc",
+  "encryptKey": "test-password",
+  "heartbeatInterval": "30",
+  "heartbeatTimeout": "60",
+  "transport": "kcp+heartbeat+encrypt+udp",
+  "upScript": "client-gfwlist_up.sh",
+  "downScript": "client-gfwlist_down.sh",
+  "kcp": {
+    "nodelay": "1",
+    "interval": "20",
+    "resend": "2",
+    "nc": "1",
+    "sndwnd": "1024",
+    "rcvwnd": "1024"
+  }
+}
