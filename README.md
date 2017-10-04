@@ -14,3 +14,11 @@ cd test
 
 cd release
 ./release.sh # generate release code + scripts
+
+push to github
+
+cd /mnt/DEV/GitRoot/sectun-github.git
+
+git push
+
+
