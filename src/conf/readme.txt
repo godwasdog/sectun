@@ -24,6 +24,13 @@ make sure heartbeat is before encrypt, so encrpyt would encrypt heartbeat data a
 
 
 
+Encryption can be choose
+
+1. none
+2. aes-128-cbc
+3. chacha20
+
+
 
 
 
