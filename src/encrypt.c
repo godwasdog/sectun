@@ -171,13 +171,15 @@ static ssize_t cipher_aes128cbc_decrypt(char *output, const char *data, size_t l
 
 static ssize_t cipher_chacha20_encrypt(char *output, const char *data, size_t len) {
     debugEncrypt("cipher_chacha20_encrypt [%d] bytes", len);
-    ChaCha20XOR(_encryptCtx.encryptKey, 1, _encryptCtx.encryptVector, data, output, len);
+    ChaCha20XOR((uint8_t *) _encryptCtx.encryptKey, 1, (uint8_t *) _encryptCtx.encryptVector,
+                (uint8_t *) data, (uint8_t *) output, len);
     return len;
 }
 
 static ssize_t cipher_chacha20_decrypt(char *output, const char *data, size_t len) {
     debugEncrypt("cipher_chacha20_decrypt [%d] bytes", len);
-    ChaCha20XOR(_encryptCtx.encryptKey, 1, _encryptCtx.encryptVector, data, output, len);
+    ChaCha20XOR((uint8_t *) _encryptCtx.encryptKey, 1, (uint8_t *) _encryptCtx.encryptVector,
+                (uint8_t *) data, (uint8_t *) output, len);
     return len;
 }
 
