@@ -52,6 +52,7 @@ Mkfile.old
 dkms.conf
 
 ## auto gen files
+.idea
 Makefile
 Makefile.in
 aclocal.m4
