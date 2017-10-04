@@ -36,7 +36,7 @@ static const char *_helpMessage =
 static void printHelp() __attribute__ ((noreturn));
 
 static void printHelp() {
-    printf(_helpMessage, PACKAGE_VERSION);
+    printf(_helpMessage, VERSION);
     exit(1);
 }
 
