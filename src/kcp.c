@@ -147,6 +147,13 @@ static ssize_t kcpWriteData(char *buf, size_t len) {
     return ikcp_send(_kcpCtx.pKcp, buf, len);
 }
 
+static ssize_t kcpForwardWriteFinish(size_t totalLen) {
+    debugKcp("kcpForwardWriteFinish [%d] bytes", totalLen);
+    // flush data, force to send
+    ikcp_flush(_kcpCtx.pKcp);
+    return totalLen;
+}
+
 /**
  *
  * @param buf
@@ -359,6 +366,7 @@ int sectunKcpInit(sectun_kcp_config_t *config, int isServer) {
 
     _kcpTransport.writeData = kcpWriteData;
     _kcpTransport.readData = kcpReadData;
+    _kcpTransport.forwardWriteFinish = kcpForwardWriteFinish;
     _kcpTransport.setNextLayer = kcpSetNextLayerTransport;
 
     // finish init

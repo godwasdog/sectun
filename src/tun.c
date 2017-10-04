@@ -73,10 +73,16 @@ static ssize_t tunReadData(char *buf, size_t len) {
  * @param events
  */
 static void tunOnRead(uev_t *w, void *arg, int events) {
-    ssize_t readSize;
+    ssize_t totalSize = 0;
+    ssize_t readSize = 0;
     while ((readSize = tunReadData(_tunCtx.dataBuffer, DATA_BUFFER_SIZE)) > 0) {
+        totalSize += readSize;
         debugTun("tun read data [%d] bytes {%s}", readSize, log_hex_memory_32_bytes(_dataBuffer));
         _tunTransport.forwardRead(_tunCtx.dataBuffer, readSize);
+    }
+
+    if (totalSize > 0 && NULL != _tunTransport.forwardReadFinish) {
+        _tunTransport.forwardReadFinish(totalSize);
     }
 }
 
@@ -161,6 +167,7 @@ static int tunStop() {
 static void tunSetNextLayerTransport(struct itransport *transport) {
     struct itransport *pTunTransport = sectunGetTunTransport();
     pTunTransport->forwardRead = transport->writeData;
+    pTunTransport->forwardReadFinish = transport->forwardWriteFinish;
     transport->forwardRead = pTunTransport->writeData;
 }
 
