@@ -7,6 +7,7 @@
 #include <assert.h>
 
 #include "3rd/aes/aes.h"
+#include "3rd/chacha20/chacha20.h"
 #include "3rd/md5/md5.h"
 
 #include "inc.h"
@@ -22,6 +23,7 @@
 typedef enum {
     ENCRYPT_NONE = 0,
     ENCRYPT_AES128CBC,
+    ENCRYPT_CHACHA20,
     ENCRYPT_END
 } encrypt_method_t;
 
@@ -166,6 +168,19 @@ static ssize_t cipher_aes128cbc_decrypt(char *output, const char *data, size_t l
     return len;
 }
 
+
+static ssize_t cipher_chacha20_encrypt(char *output, const char *data, size_t len) {
+    debugEncrypt("cipher_chacha20_encrypt [%d] bytes", len);
+    ChaCha20XOR(_encryptCtx.encryptKey, 1, _encryptCtx.encryptVector, data, output, len);
+    return len;
+}
+
+static ssize_t cipher_chacha20_decrypt(char *output, const char *data, size_t len) {
+    debugEncrypt("cipher_chacha20_decrypt [%d] bytes", len);
+    ChaCha20XOR(_encryptCtx.encryptKey, 1, _encryptCtx.encryptVector, data, output, len);
+    return len;
+}
+
 static ssize_t encryptWriteData(char *buffer, size_t len) {
 
     // we do encryption here
@@ -217,13 +232,15 @@ int sectunEncryptInit(const char *encrypt, const char *encryptKey) {
     memset(&_encryptCtx, 0, sizeof(_encryptCtx));
 
     // we generate encrypt key here
-    md5(encrypt, ENCRYPT_KEY_SIZE, _encryptCtx.encryptKey);
+    md5(encryptKey, strlen(encryptKey), _encryptCtx.encryptKey);
 
     // do not use encrypt if encrypt is none
     if (0 == strcmp("none", encrypt)) {
         _encryptCtx.encryptMethod = ENCRYPT_NONE;
     } else if (0 == strcmp("aes-128-cbc", encrypt)) {
         _encryptCtx.encryptMethod = ENCRYPT_AES128CBC;
+    } else if (0 == strcmp("chacha20", encrypt)) {
+        _encryptCtx.encryptMethod = ENCRYPT_CHACHA20;
     } else {
         // default use aes-128-cbc
         _encryptCtx.encryptMethod = ENCRYPT_AES128CBC;
@@ -239,7 +256,9 @@ int sectunEncryptInit(const char *encrypt, const char *encryptKey) {
     // aes-128-cbc
     _encryptHandleArray[ENCRYPT_AES128CBC].encrypt = cipher_aes128cbc_encrypt;
     _encryptHandleArray[ENCRYPT_AES128CBC].decrypt = cipher_aes128cbc_decrypt;
-
+    // chacha20
+    _encryptHandleArray[ENCRYPT_CHACHA20].encrypt = cipher_chacha20_encrypt;
+    _encryptHandleArray[ENCRYPT_CHACHA20].decrypt = cipher_chacha20_decrypt;
 
     // init encrypt transport
     _encryptTransport = __dummyTransport;

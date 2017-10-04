@@ -4,6 +4,7 @@ lib_LTLIBRARIES = libsectun.la
 
 libsectun_la_SOURCES = \
         3rd/aes/aes.c \
+        3rd/chacha20/chacha20.c \
         3rd/ikcp/ikcp.c \
         3rd/jsmn/jsmn.c \
         3rd/libuev/uev.c 3rd/libuev/timer.c 3rd/libuev/signal.c 3rd/libuev/io.c 3rd/libuev/cron.c \
