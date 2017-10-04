@@ -30,13 +30,13 @@ static const char *_helpMessage =
                 "  -c config_file        path to config file\n"
                 "  -v                    verbose logging\n"
                 "\n"
-                "Secrect Tunnel developed for geek guys\n"
+                "Secrect Tunnel developed for geek guys version [%s]\n"
                 "Online help: <https://github.com/qiang-yu/sectun>\n";
 
 static void printHelp() __attribute__ ((noreturn));
 
 static void printHelp() {
-    printf("%s", _helpMessage);
+    printf(_helpMessage, PACKAGE_VERSION);
     exit(1);
 }
 

@@ -12,6 +12,12 @@ make
 cd test
 ./release.sh # generate test release  code + scripts
 
+login to test server,run
+./pull_server.sh   would pull server code for testing
+
+login to client, run
+./pull_client.sh   would pull client code for testing
+
 cd release
 ./release.sh # generate release code + scripts
 
