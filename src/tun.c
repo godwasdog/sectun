@@ -18,6 +18,8 @@
 #include "inc.h"
 #include "log.h"
 #include "event.h"
+#include "util.h"
+#include "auth.h"
 #include "tun.h"
 
 #ifdef DEBUG_TUN
@@ -28,6 +30,7 @@
 
 // tun 操作的上下文
 static struct {
+    int isServer;
     // device
     const char *device;
     // file descriptor
@@ -65,6 +68,39 @@ static ssize_t tunReadData(char *buf, size_t len, void *context) {
     return read(_tunCtx.tunFd, buf, len);
 }
 
+
+/*
+   RFC791
+   0                   1                   2                   3
+   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |Version|  IHL  |Type of Service|          Total Length         |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |         Identification        |Flags|      Fragment Offset    |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |  Time to Live |    Protocol   |         Header Checksum       |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                       Source Address                          |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                    Destination Address                        |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                    Options                    |    Padding    |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+*/
+typedef struct {
+    uint8_t ver;
+    uint8_t tos;
+    uint16_t total_len;
+    uint16_t id;
+    uint16_t frag;
+    uint8_t ttl;
+    uint8_t proto;
+    uint16_t checksum;
+    uint32_t saddr;
+    uint32_t daddr;
+} ipv4_hdr_t;
+
+
 /**
  *  on read event
  *
@@ -75,15 +111,45 @@ static ssize_t tunReadData(char *buf, size_t len, void *context) {
 static void tunOnRead(uev_t *w, void *arg, int events) {
     ssize_t totalSize = 0;
     ssize_t readSize = 0;
-    void *context = NULL; // TODO: need further implement
-    while ((readSize = tunReadData(_tunCtx.dataBuffer, DATA_BUFFER_SIZE, context)) > 0) {
+    client_info_t *client = NULL;
+    while ((readSize = tunReadData(_tunCtx.dataBuffer, DATA_BUFFER_SIZE, NULL)) > 0) {
         totalSize += readSize;
         debugTun("tun read data [%d] bytes {%s}", readSize, log_hex_memory_32_bytes(_dataBuffer));
-        _tunTransport.forwardRead(_tunCtx.dataBuffer, readSize, context);
+
+        ipv4_hdr_t *iphdr = (ipv4_hdr_t *) _tunCtx.dataBuffer;
+        if ((iphdr->ver & 0xf0) != 0x40) {
+            // check header, currently IPv4 only
+            // bypass IPv6
+            continue;
+        }
+        uint32_t tunIp = 0;
+        if (isServer) {
+            tunIp = ntohl(iphdr->daddr);
+        } else {
+            tunIp = ntohl(iphdr->saddr);
+        }
+
+#ifdef DEBUG_TUN
+
+        struct in_addr in;
+        in.s_addr = htonl((uint32_t) tunIp);
+        debugTun("tunOnRead  tunip : [%s] \n", inet_ntoa(in));
+
+#endif
+
+        client = sectunAuthFindClientByTunIp(tunIp);
+        if (NULL == client) {
+            struct in_addr in;
+            in.s_addr = htonl((uint32_t) tunIp);
+            errf("tunip : [%s] find no client\n", inet_ntoa(in));
+            return -1;
+        }
+
+        _tunTransport.forwardRead(_tunCtx.dataBuffer, readSize, client);
     }
 
     if (totalSize > 0 && NULL != _tunTransport.forwardReadFinish) {
-        _tunTransport.forwardReadFinish(totalSize, context);
+        _tunTransport.forwardReadFinish(totalSize, client);
     }
 }
 
@@ -177,11 +243,12 @@ static void tunSetNextLayerTransport(struct itransport *transport) {
  * @param dev  device name
  * @return
  */
-int sectunTunInit(const char *dev) {
+int sectunTunInit(const char *dev, int isServer) {
 
     assert(NULL != dev);
 
     memset(&_tunCtx, 0, sizeof(_tunCtx));
+    _tunCtx.isServer = isServer;
     _tunCtx.device = dev;
 
     // init tun transport

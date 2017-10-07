@@ -13,7 +13,7 @@
  * @param dev  device name
  * @return
  */
-int sectunTunInit(const char *dev);
+int sectunTunInit(const char *dev, int isServer);
 
 /**
  *

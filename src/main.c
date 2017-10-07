@@ -133,7 +133,7 @@ static int setupTransChain(sectun_args_t *args) {
     memset(_transChain, 0, TRANSPORT_CHAIN_MAX);
 
     // setup tun device
-    if (0 != (ret = sectunTunInit(args->device))) {
+    if (0 != (ret = sectunTunInit(args->device, isServer))) {
         return ret;
     }
     // set tun transport
