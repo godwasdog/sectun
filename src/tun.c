@@ -2,8 +2,8 @@
 // Created by YuQiang on 2017-09-29.
 //
 
-#include <sys/types.h>
 #include <stdint.h>
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
