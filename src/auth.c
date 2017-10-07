@@ -76,7 +76,6 @@ ssize_t authWriteData(char *buffer, size_t len, void *context) {
         return -1;
     }
 
-
     client_info_t *client = (client_info_t *) context;
     // put user token at the end of the package
     debugAuth("authWriteData user token[%.*s]", AUTH_USERTOKEN_LEN, client->userToken);
@@ -143,23 +142,27 @@ int sectunAuthInit(const char *tokenStr, uint32_t tunIp, int isServer) {
 
     assert(0 == _isAuthInit);
 
+    int ret = 0;
+
     if (!isServer) {
         // client add it self
-        return sectunAuthAddClient(tokenStr, tunIp);
-    }
-
-    // server, need to add a list of client
-    char *tokenList = utilDupStr(tokenStr, strlen(tokenStr));
-
-    char *token = strtok(tokenList, AUTH_USERTOKEN_DELIMITER);
-    while (NULL != token) {
-        tunIp++;
-        int ret = 0;
-        ret = sectunAuthAddClient(token, tunIp);
+        ret = sectunAuthAddClient(tokenStr, tunIp);
         if (0 != ret) {
             return ret;
         }
-        token = strtok(NULL, AUTH_USERTOKEN_DELIMITER);
+    } else {
+        // server, need to add a list of client
+        char *tokenList = utilDupStr(tokenStr, strlen(tokenStr));
+
+        char *token = strtok(tokenList, AUTH_USERTOKEN_DELIMITER);
+        while (NULL != token) {
+            tunIp++;
+            ret = sectunAuthAddClient(token, tunIp);
+            if (0 != ret) {
+                return ret;
+            }
+            token = strtok(NULL, AUTH_USERTOKEN_DELIMITER);
+        }
     }
 
     // init auth transport
