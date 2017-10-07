@@ -19,7 +19,7 @@ LT_INIT
 #AC_DEFINE(DEBUG_SERVER, 0, [log server debug message])
 #AC_DEFINE(DEBUG_CLIENT, 0, [log client debug message])
 #AC_DEFINE(DEBUG_TRANSPORT,    0, [log transport debug message])
-#AC_DEFINE(DEBUG_UDP,    0, [log udp debug message])
+AC_DEFINE(DEBUG_UDP,    0, [log udp debug message])
 AC_DEFINE(DEBUG_AUTH,    0, [log udp debug message])
 #AC_DEFINE(DEBUG_ENCRYPT, 0, [log encrypt debug message])
 #AC_DEFINE(DEBUG_HEARTBEAT, 0, [log encrypt debug message])
