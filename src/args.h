@@ -48,8 +48,10 @@ typedef struct {
     // the ip of the "net" configuration
     // in host order
     uint32_t netip;
-    char (*user_tokens)[8];
-    size_t user_tokens_len;
+    // token used by client, 8 character size, such as "8wegno3a"
+    const char *userToken;
+    // token list used by server, seprated by comma, such as  "8wegno3a,8webno3a,ewegno3a"
+    const char *userTokenList;
 
     const char *upScript;
     const char *downScript;

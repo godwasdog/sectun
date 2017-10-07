@@ -167,6 +167,16 @@ static int parseConfigFile(sectun_args_t *args, const char *filename) {
                 continue;
             }
 
+            if (0 == strcmp("userToken", jsonKey)) {
+                args->userToken = jsonValue;
+                continue;
+            }
+
+            if (0 == strcmp("userTokenList", jsonKey)) {
+                args->userTokenList = jsonValue;
+                continue;
+            }
+
             if (0 == strcmp("heartbeatInterval", jsonKey)) {
                 args->heartbeatInterval = atoi(jsonValue);
                 continue;
@@ -194,6 +204,13 @@ static int parseConfigFile(sectun_args_t *args, const char *filename) {
 
             // we do not use net, it would be set and used by shell script
             if (0 == strcmp("net", jsonKey)) {
+                char *p = strchr(jsonValue, '/');
+                if (p) *p = '\0';
+                in_addr_t addr = inet_addr(jsonValue);
+                if (addr == INADDR_NONE) {
+                    errf("warning: invalid net IP in config file: %s", jsonValue);
+                }
+                args->netip = ntohl((uint32_t) addr);
                 continue;
             }
 
@@ -290,6 +307,13 @@ void sectunArgDump(FILE *stream, sectun_args_t *args) {
     fprintf(stream, "mtu : [%d]\n", args->mtu);
     fprintf(stream, "encrypt : [%s]\n", args->encrypt);
     fprintf(stream, "encryptKey : [%s]\n", args->encryptKey);
+
+    struct in_addr in;
+    in.s_addr = args->netip;
+    fprintf(stream, "netip : [%s]\n", inet_ntoa(in));
+
+    fprintf(stream, "userToken : [%s]\n", args->userToken);
+    fprintf(stream, "userTokenList : [%s]\n", args->userTokenList);
     fprintf(stream, "heartbeatInterval : [%lu]\n", args->heartbeatInterval);
     fprintf(stream, "heartbeatTimeout : [%lu]\n", args->heartbeatTimeout);
     fprintf(stream, "transport : [%s]\n", args->transport);

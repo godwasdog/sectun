@@ -18,6 +18,7 @@
 #include "encrypt.h"
 #include "heartbeat.h"
 #include "kcp.h"
+#include "auth.h"
 #include "tun.h"
 
 #ifdef DEBUG_MAIN
@@ -277,6 +278,9 @@ static int sectunStart(sectun_args_t *args) {
 
 int main(int argc, char *argv[]) {
 
+    // init
+    sectunAuthInit();
+    
     // parse args
     sectunArgParse(&_sectunArgs, argc, argv);
     sectunArgDump(stdout, &_sectunArgs);

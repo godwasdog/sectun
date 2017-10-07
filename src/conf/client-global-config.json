@@ -7,6 +7,7 @@
   "mode": "client",
   "encrypt": "chacha20",
   "encryptKey": "test-password",
+  "userToken": "8wegno3a",
   "heartbeatInterval": "30",
   "heartbeatTimeout": "60",
   "transport": "kcp+heartbeat+encrypt+udp",

@@ -20,7 +20,7 @@ static struct {
  * @return
  */
 client_info_t *sectunAuthFindClientByTunIp(uint32_t tunIp) {
-    client_info_t *client;
+    client_info_t *client = NULL;
     HASH_FIND(tunIpToClient, _authCtx.tunIpToClientHash, &tunIp, sizeof(uint32_t), client);
     return client;
 }
@@ -31,7 +31,7 @@ client_info_t *sectunAuthFindClientByTunIp(uint32_t tunIp) {
  * @return
  */
 client_info_t *sectunAuthFindClientByToken(const char *token) {
-    client_info_t *client;
+    client_info_t *client = NULL;
     HASH_FIND(tokenToClient, _authCtx.tokenToClientHash, token, AUTH_USERTOKEN_LEN, client);
     return client;
 }
