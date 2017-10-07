@@ -278,12 +278,18 @@ static int sectunStart(sectun_args_t *args) {
 
 int main(int argc, char *argv[]) {
 
-    // init
-    sectunAuthInit();
-    
     // parse args
     sectunArgParse(&_sectunArgs, argc, argv);
     sectunArgDump(stdout, &_sectunArgs);
+
+    if (SECTUN_MODE_SERVER == _sectunArgs.mode) {
+        sectunAuthInit(_sectunArgs.userTokenList, _sectunArgs.netip);
+    } else {
+        sectunAuthInit(_sectunArgs.userToken, _sectunArgs.netip);
+    }
+
+    // dump client list
+    sectunAuthDumpClient(stdout);
 
     // setup signal handle
     signal(SIGINT, sig_handler);

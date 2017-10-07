@@ -17,6 +17,7 @@
 #include "3rd/uthash/uthash.h"
 
 #define AUTH_USERTOKEN_LEN  8
+#define AUTH_USERTOKEN_DELIMITER    ","
 
 /* the structure to store known client addresses for the server */
 typedef struct {
@@ -42,9 +43,11 @@ client_info_t *sectunAuthFindClientByToken(const char *token);
 
 int sectunAuthAddClient(const char *token, uint32_t tunIp);
 
-int sectunAuthInit();
+int sectunAuthInit(const char *tokenStr, uint32_t tunIp, int isServer);
 
 int sectunAuthStop();
+
+void sectunAuthDumpClient(FILE *stream);
 
 
 #endif //SECTUN_GITHUB_AUTH_H
