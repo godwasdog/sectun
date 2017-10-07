@@ -108,7 +108,10 @@ static ssize_t authForwardRead(char *buffer, size_t len, void *context) {
     if (client->peerAddr.sin_port != tmpClient->peerAddr.sin_port) {
         struct in_addr in;
         in.s_addr = htonl((uint32_t) client->tunIp);
-        logf("user token [%.*s] tunip [%s] connect", AUTH_USERTOKEN_LEN, client->userToken, inet_ntoa(in));
+        logf("auth user token [%.*s] tunip [%s] connect from [%s:%d]",
+             AUTH_USERTOKEN_LEN, client->userToken, inet_ntoa(in),
+             inet_ntoa(((struct sockaddr_in *) &tmpClient->peerAddr)->sin_addr),
+             ntohl(tmpClient->peerAddr.sin_port));
     }
 
     client->peerAddr = tmpClient->peerAddr;
