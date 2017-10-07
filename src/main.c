@@ -282,11 +282,15 @@ int main(int argc, char *argv[]) {
     sectunArgParse(&_sectunArgs, argc, argv);
     sectunArgDump(stdout, &_sectunArgs);
 
-    if (SECTUN_MODE_SERVER == _sectunArgs.mode) {
-        sectunAuthInit(_sectunArgs.userTokenList, _sectunArgs.netip);
+    int isServer = SECTUN_MODE_SERVER == _sectunArgs.mode;
+    const char *tokenStr;
+    if (isServer) {
+        tokenStr = _sectunArgs.userTokenList;
     } else {
-        sectunAuthInit(_sectunArgs.userToken, _sectunArgs.netip);
+        tokenStr = _sectunArgs.userToken;
     }
+
+    sectunAuthInit(tokenStr, _sectunArgs.netip, isServer);
 
     // dump client list
     sectunAuthDumpClient(stdout);
