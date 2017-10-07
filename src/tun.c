@@ -49,7 +49,7 @@ static int _isTunInit = 0;
  * @param len
  * @return
  */
-static ssize_t tunWrteData(char *buf, size_t len) {
+static ssize_t tunWrteData(char *buf, size_t len, void *context) {
     assert(0 != _tunCtx.tunFd);
     return write(_tunCtx.tunFd, buf, len);
 }
@@ -60,7 +60,7 @@ static ssize_t tunWrteData(char *buf, size_t len) {
  * @param len
  * @return
  */
-static ssize_t tunReadData(char *buf, size_t len) {
+static ssize_t tunReadData(char *buf, size_t len, void *context) {
     assert(0 != _tunCtx.tunFd);
     return read(_tunCtx.tunFd, buf, len);
 }
@@ -75,14 +75,15 @@ static ssize_t tunReadData(char *buf, size_t len) {
 static void tunOnRead(uev_t *w, void *arg, int events) {
     ssize_t totalSize = 0;
     ssize_t readSize = 0;
-    while ((readSize = tunReadData(_tunCtx.dataBuffer, DATA_BUFFER_SIZE)) > 0) {
+    void *context = NULL; // TODO: need further implement
+    while ((readSize = tunReadData(_tunCtx.dataBuffer, DATA_BUFFER_SIZE, context)) > 0) {
         totalSize += readSize;
         debugTun("tun read data [%d] bytes {%s}", readSize, log_hex_memory_32_bytes(_dataBuffer));
-        _tunTransport.forwardRead(_tunCtx.dataBuffer, readSize);
+        _tunTransport.forwardRead(_tunCtx.dataBuffer, readSize, context);
     }
 
     if (totalSize > 0 && NULL != _tunTransport.forwardReadFinish) {
-        _tunTransport.forwardReadFinish(totalSize);
+        _tunTransport.forwardReadFinish(totalSize, context);
     }
 }
 

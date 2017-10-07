@@ -44,7 +44,7 @@ static unsigned long getTimestamp() {
     return (unsigned long) te.tv_sec;
 }
 
-static ssize_t sendHeartbeatMsg() {
+static ssize_t sendHeartbeatMsg(void *context) {
     static char buffer[64];
     memset(buffer, '\0', 64);
     // we send timestamp here only use it as random number
@@ -54,7 +54,7 @@ static ssize_t sendHeartbeatMsg() {
 
     debugHeartbeat("send hearbeat msg");
 
-    return _hearbeatTransport.forwardWrite(buffer, len);
+    return _hearbeatTransport.forwardWrite(buffer, len, context);
 }
 
 /**
@@ -75,7 +75,7 @@ void timerHeartbeat(uev_t *w, void *arg, int events) {
         sectunRestartTransport(&_hearbeatTransport);
         return;
     }
-    //send hearbeat
+    //send hearbeat TODO: here is wrong, need further implement
     sendHeartbeatMsg();
 }
 
@@ -85,7 +85,7 @@ void timerHeartbeat(uev_t *w, void *arg, int events) {
  * @param len
  * @return
  */
-static ssize_t hearbeatWriteData(char *buffer, size_t len) {
+static ssize_t hearbeatWriteData(char *buffer, size_t len, void *context) {
 
     const maxWriteSize = DATA_BUFFER_SIZE - DATA_PADDING_SIZE - 1;
     if (len >= maxWriteSize) {
@@ -94,11 +94,11 @@ static ssize_t hearbeatWriteData(char *buffer, size_t len) {
     }
 
     buffer[len++] = HEARTBEAT_MAGIC_DATA;
-    return _hearbeatTransport.forwardWrite(buffer, len);
+    return _hearbeatTransport.forwardWrite(buffer, len, context);
 }
 
 
-ssize_t hearbeatForwardRead(char *buffer, size_t len) {
+ssize_t hearbeatForwardRead(char *buffer, size_t len, void *context) {
 
     unsigned char magic = buffer[--len];
 
@@ -108,7 +108,7 @@ ssize_t hearbeatForwardRead(char *buffer, size_t len) {
 
         if (_hearbeatCtx.isServer) {
             // server send back msg
-            sendHeartbeatMsg();
+            sendHeartbeatMsg(context);
         } else {
             //client update timestamp
             _hearbeatCtx.timestamp = getTimestamp();
@@ -119,15 +119,15 @@ ssize_t hearbeatForwardRead(char *buffer, size_t len) {
 
     if (HEARTBEAT_MAGIC_DATA == magic) {
         //forward data
-        return _hearbeatTransport.forwardRead(buffer, len);
+        return _hearbeatTransport.forwardRead(buffer, len, context);
     }
 
     errf("heartbeat bad magic char [%02x]", magic);
     return len;
 }
 
-ssize_t heartbeatForwardReadFinish(size_t totalLen) {
-    return _hearbeatTransport.forwardReadFinish(totalLen);
+ssize_t heartbeatForwardReadFinish(size_t totalLen, void *context) {
+    return _hearbeatTransport.forwardReadFinish(totalLen, context);
 }
 
 

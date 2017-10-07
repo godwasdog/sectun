@@ -50,7 +50,7 @@ static int _isKcpInit = 0;
  */
 static int kcpOutput(const char *buf, int len, ikcpcb *kcp, void *user) {
     debugKcp("kcp output [%d] bytes {%s}", len, log_hex_memory_32_bytes(buf));
-    return _kcpTransport.forwardWrite((char *) buf, len);
+    return _kcpTransport.forwardWrite((char *) buf, len, user);
 }
 
 /**
@@ -79,17 +79,19 @@ void timerKcpUpdate(uev_t *w, void *arg, int events) {
 /**
  *  创建一个 kcp 链接
  *
+ *  TODO: here needs further implement
+ *
  * @param conv
  * @return
  */
-static ikcpcb *kcpCreateConv(IUINT32 conv) {
+static ikcpcb *kcpCreateConv(IUINT32 conv, void *context) {
 
     assert(NULL == _kcpCtx.pKcp);
 
     // save conv
     _kcpCtx.conv = conv;
 
-    _kcpCtx.pKcp = ikcp_create(_kcpCtx.conv, NULL);
+    _kcpCtx.pKcp = ikcp_create(_kcpCtx.conv, context);
     if (NULL == _kcpCtx.pKcp) {
         err("can not create ikcp");
         return NULL;
@@ -143,11 +145,11 @@ static void kcpStopConv() {
  * @param len
  * @return
  */
-static ssize_t kcpWriteData(char *buf, size_t len) {
+static ssize_t kcpWriteData(char *buf, size_t len, void *context) {
     return ikcp_send(_kcpCtx.pKcp, buf, len);
 }
 
-static ssize_t kcpForwardWriteFinish(size_t totalLen) {
+static ssize_t kcpForwardWriteFinish(size_t totalLen, void *context) {
     debugKcp("kcpForwardWriteFinish [%d] bytes", totalLen);
     // flush data, force to send
     ikcp_flush(_kcpCtx.pKcp);
@@ -160,7 +162,7 @@ static ssize_t kcpForwardWriteFinish(size_t totalLen) {
  * @param len
  * @return
  */
-static ssize_t kcpReadData(char *buf, size_t len) {
+static ssize_t kcpReadData(char *buf, size_t len, void *context) {
     return ikcp_recv(_kcpCtx.pKcp, buf, len);
 }
 
@@ -172,7 +174,7 @@ static ssize_t kcpReadData(char *buf, size_t len) {
  * @param buf
  * @param len
  */
-static ssize_t kcpOnRead(char *buf, size_t len) {
+static ssize_t kcpOnRead(char *buf, size_t len, void *context) {
 
     if (_kcpCtx.isServer) {
 
@@ -196,20 +198,20 @@ static ssize_t kcpOnRead(char *buf, size_t len) {
  *
  * @param totalLen
  */
-static ssize_t kcpFinishOnRead(size_t totalLen) {
+static ssize_t kcpFinishOnRead(size_t totalLen, void *context) {
     ssize_t readSize = 0;
     ssize_t totalSize = 0;
 
-    while ((readSize = kcpReadData(_kcpCtx.dataBuffer, DATA_BUFFER_SIZE)) > 0) {
+    while ((readSize = kcpReadData(_kcpCtx.dataBuffer, DATA_BUFFER_SIZE, context)) > 0) {
         totalSize += readSize;
         if (NULL != _kcpTransport.forwardRead) {
             debugKcp("kcp onRead [%d] bytes {%s}", readSize, log_hex_memory_32_bytes(_kcpCtx.dataBuffer));
-            _kcpTransport.forwardRead(_kcpCtx.dataBuffer, readSize);
+            _kcpTransport.forwardRead(_kcpCtx.dataBuffer, readSize, context);
         }
     }
 
     if (totalSize > 0 && NULL != _kcpTransport.forwardReadFinish) {
-        return _kcpTransport.forwardReadFinish(totalSize);
+        return _kcpTransport.forwardReadFinish(totalSize, context);
     }
 
     return totalLen;

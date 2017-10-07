@@ -15,6 +15,9 @@
 #include <sys/socket.h>
 
 #include "3rd/uthash/uthash.h"
+#include "3rd/ikcp/ikcp.h"
+
+#include "itransport.h"
 
 #define AUTH_USERTOKEN_LEN  8
 #define AUTH_USERTOKEN_DELIMITER    ","
@@ -25,12 +28,17 @@ typedef struct {
     char userToken[AUTH_USERTOKEN_LEN];
 
     // source address of UDP
-    struct sockaddr_storage sourceAddr;
-    socklen_t sourceAddrLen;
+    struct sockaddr_storage peerAddr;
+    socklen_t peerAddrLen;
 
     // input tun IP
     // in network order
     uint32_t tunIp;
+
+    // kcp connection number
+    IUINT32 conv;
+    // kcp object
+    ikcpcb *pKcp;
 
     UT_hash_handle tunIpToClient;
     UT_hash_handle tokenToClient;
@@ -48,6 +56,13 @@ int sectunAuthInit(const char *tokenStr, uint32_t tunIp, int isServer);
 int sectunAuthStop();
 
 void sectunAuthDumpClient(FILE *stream);
+
+/**
+ *
+ * 返回 singleton 的实例，常量不可更改
+ *
+ * */
+struct itransport *const sectunGetAuthTransport();
 
 
 #endif //SECTUN_GITHUB_AUTH_H

@@ -26,7 +26,7 @@ struct itransport {
      * @param buffer buffer to store data
      * @param len  data len
      */
-    ssize_t (*readData)(char *buffer, size_t len);
+    ssize_t (*readData)(char *buffer, size_t len, void *context);
 
     /**
      * @return the real bytes that write
@@ -34,7 +34,7 @@ struct itransport {
      * @param buffer
      * @param len
      */
-    ssize_t (*writeData)(char *buffer, size_t len);
+    ssize_t (*writeData)(char *buffer, size_t len, void *context);
 
     /**
      *  start the transport
@@ -64,7 +64,7 @@ struct itransport {
      * @param buffer
      * @param len
      */
-    ssize_t (*forwardRead)(char *buffer, size_t len);
+    ssize_t (*forwardRead)(char *buffer, size_t len, void *context);
 
     /**
      *  当前模版把数据 fowardRead 给下一个模块，数据传完之后调用这个方法，
@@ -72,7 +72,7 @@ struct itransport {
      *
      * @param totalLen
      */
-    ssize_t (*forwardReadFinish)(size_t totalLen);
+    ssize_t (*forwardReadFinish)(size_t totalLen, void *context);
 
 
     /**
@@ -81,7 +81,7 @@ struct itransport {
      * @param buffer
      * @param len
      */
-    ssize_t (*forwardWrite)(char *buffer, size_t len);
+    ssize_t (*forwardWrite)(char *buffer, size_t len, void *context);
 
     /**
      *  当前模版把数据 fowardWrite 给下一个模块，数据传完之后调用这个方法，
@@ -89,7 +89,7 @@ struct itransport {
      *
      * @param totalLen
      */
-    ssize_t (*forwardWriteFinish)(size_t totalLen);
+    ssize_t (*forwardWriteFinish)(size_t totalLen, void *context);
 
 };
 

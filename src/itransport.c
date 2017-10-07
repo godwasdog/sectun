@@ -14,13 +14,13 @@
 #define debugTransport(s...)
 #endif
 
-static ssize_t dummyReadData(char *buffer, size_t len) {
+static ssize_t dummyReadData(char *buffer, size_t len, void *context) {
     debugTransport("__dummyTransport.readData [%d] bytes", len);
     return len;
 }
 
 
-static ssize_t dummyWriteData(char *buffer, size_t len) {
+static ssize_t dummyWriteData(char *buffer, size_t len, void *context) {
     debugTransport("__dummyTransport.writeData [%d] bytes", len);
     return len;
 }
@@ -40,22 +40,22 @@ static void dumySetNextLayer(struct itransport *transport) {
     debugTransport("__dummyTransport.setNextLayer");
 }
 
-static ssize_t dummyForwardRead(char *buffer, size_t len) {
+static ssize_t dummyForwardRead(char *buffer, size_t len, void *context) {
     debugTransport("__dummyTransport.forwardRead [%d] bytes", len);
     return len;
 }
 
-static ssize_t dummyForwardReadFinish(size_t totalLen) {
+static ssize_t dummyForwardReadFinish(size_t totalLen, void *context) {
     debugTransport("__dummyTransport.forwardReadFinish [%d] bytes", totalLen);
     return totalLen;
 }
 
-static ssize_t dummyForwardWrite(char *buffer, size_t len) {
+static ssize_t dummyForwardWrite(char *buffer, size_t len, void *context) {
     debugTransport("__dummyTransport.forwardWrite [%d] bytes", len);
     return len;
 }
 
-static ssize_t dummyForwardWriteFinish(size_t totalLen) {
+static ssize_t dummyForwardWriteFinish(size_t totalLen, void *context) {
     debugTransport("__dummyTransport.forwardWriteFinish [%d] bytes", totalLen);
     return totalLen;
 }

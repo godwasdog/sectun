@@ -58,7 +58,7 @@ static int _isUdpInit = 0;
  * @param len
  * @return
  */
-static ssize_t udpWriteData(char *buf, size_t len) {
+static ssize_t udpWriteData(char *buf, size_t len, void *context) {
     debugUdp("udp write data --[%d] bytes {%s}", len, log_hex_memory_32_bytes(buf));
     return sendto(_udpCtx.socketFd, buf, len, 0,
                   (const struct sockaddr *) &(_udpCtx.peerAddr), _udpCtx.peerAddrLen);
@@ -81,7 +81,7 @@ static ssize_t udpReadDataFrom(char *buf, size_t len, struct sockaddr *fromAddr,
  * @param len
  * @return
  */
-static ssize_t udpReadData(char *buf, size_t len) {
+static ssize_t udpReadData(char *buf, size_t len, void *context) {
     return udpReadDataFrom(buf, len, (struct sockaddr *) &(_udpCtx.peerAddr), &(_udpCtx.peerAddrLen));
 }
 
@@ -96,16 +96,17 @@ static ssize_t udpReadData(char *buf, size_t len) {
 static void udpOnRead(uev_t *w, void *arg, int events) {
     ssize_t readSize = 0;
     ssize_t totalSize = 0;
-    while ((readSize = udpReadData(_udpCtx.dataBuffer, DATA_BUFFER_SIZE)) > 0) {
+    void *context = NULL;
+    while ((readSize = udpReadData(_udpCtx.dataBuffer, DATA_BUFFER_SIZE, context)) > 0) {
         debugUdp("udp read data --[%d] bytes {%s}", readSize, log_hex_memory_32_bytes(_udpCtx.dataBuffer));
         totalSize += readSize;
         if (NULL != _udpTransport.forwardRead) {
-            _udpTransport.forwardRead(_udpCtx.dataBuffer, readSize);
+            _udpTransport.forwardRead(_udpCtx.dataBuffer, readSize, context);
         }
     }
 
     if (totalSize > 0 && NULL != _udpTransport.forwardReadFinish) {
-        _udpTransport.forwardReadFinish(totalSize);
+        _udpTransport.forwardReadFinish(totalSize, context);
     }
 }
 

@@ -183,27 +183,27 @@ static ssize_t cipher_chacha20_decrypt(char *output, const char *data, size_t le
     return len;
 }
 
-static ssize_t encryptWriteData(char *buffer, size_t len) {
+static ssize_t encryptWriteData(char *buffer, size_t len, void *context) {
 
     // we do encryption here
     len = _encryptHandleArray[_encryptCtx.encryptMethod].encrypt(_encryptCtx.dataBuffer, buffer, len);
     if (len > 0) {
-        return _encryptTransport.forwardWrite(_encryptCtx.dataBuffer, len);
+        return _encryptTransport.forwardWrite(_encryptCtx.dataBuffer, len, context);
     }
     return len;
 }
 
-static ssize_t encryptOnRead(char *buffer, size_t len) {
+static ssize_t encryptOnRead(char *buffer, size_t len, void *context) {
     // we do decryption here
     len = _encryptHandleArray[_encryptCtx.encryptMethod].decrypt(_encryptCtx.dataBuffer, buffer, len);
     if (len > 0) {
-        _encryptTransport.forwardRead(_encryptCtx.dataBuffer, len);
+        _encryptTransport.forwardRead(_encryptCtx.dataBuffer, len, context);
     }
 }
 
-static ssize_t encryptFinishOnRead(size_t totalLen) {
+static ssize_t encryptFinishOnRead(size_t totalLen, void *context) {
     if (NULL != _encryptTransport.forwardReadFinish) {
-        _encryptTransport.forwardReadFinish(totalLen);
+        _encryptTransport.forwardReadFinish(totalLen, context);
     }
 }
 

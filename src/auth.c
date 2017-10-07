@@ -2,6 +2,7 @@
 // Created by YuQiang on 2017-10-07.
 //
 
+#include <assert.h>
 
 #include "inc.h"
 #include "util.h"
@@ -14,6 +15,9 @@ static struct {
     client_info_t *tunIpToClientHash;
     client_info_t *tokenToClientHash;
 } _authCtx;
+
+static struct itransport _authTransport;
+static int _isAuthInit = 0;
 
 /**
  *  find client info by tunIp
@@ -59,6 +63,8 @@ int sectunAuthAddClient(const char *token, uint32_t tunIp) {
 int sectunAuthInit(const char *tokenStr, uint32_t tunIp, int isServer) {
     memset(&_authCtx, 0, sizeof(_authCtx));
 
+    assert(0 == _isAuthInit);
+
     if (!isServer) {
         // client add it self
         return sectunAuthAddClient(tokenStr, tunIp);
@@ -77,6 +83,12 @@ int sectunAuthInit(const char *tokenStr, uint32_t tunIp, int isServer) {
         }
         token = strtok(NULL, AUTH_USERTOKEN_DELIMITER);
     }
+
+    // init auth transport
+    _authTransport = __dummyTransport;
+
+    // finish init
+    _isAuthInit = 1;
     return 0;
 }
 
@@ -94,3 +106,7 @@ void sectunAuthDumpClient(FILE *stream) {
     }
 }
 
+struct itransport *const sectunGetAuthTransport() {
+    assert(_isAuthInit > 0);
+    return &_authTransport;
+}
