@@ -18,6 +18,7 @@
 #include "log.h"
 #include "event.h"
 #include "util.h"
+#include "auth.h"
 #include "udp.h"
 
 #ifdef DEBUG_UDP
@@ -30,8 +31,9 @@
 static struct {
 
     int socketFd;
-    struct sockaddr_in peerAddr;
-    socklen_t peerAddrLen;
+
+    // tmp client info, save socket addr info
+    client_info_t tmpClientInfo;
 
     // save host/port
     const char *host;
@@ -60,8 +62,9 @@ static int _isUdpInit = 0;
  */
 static ssize_t udpWriteData(char *buf, size_t len, void *context) {
     debugUdp("udp write data --[%d] bytes {%s}", len, log_hex_memory_32_bytes(buf));
+    client_info_t *client = (client_info_t *) context;
     return sendto(_udpCtx.socketFd, buf, len, 0,
-                  (const struct sockaddr *) &(_udpCtx.peerAddr), _udpCtx.peerAddrLen);
+                  (const struct sockaddr *) &(client->peerAddr), client->peerAddrLen);
 }
 
 /**
@@ -82,7 +85,8 @@ static ssize_t udpReadDataFrom(char *buf, size_t len, struct sockaddr *fromAddr,
  * @return
  */
 static ssize_t udpReadData(char *buf, size_t len, void *context) {
-    return udpReadDataFrom(buf, len, (struct sockaddr *) &(_udpCtx.peerAddr), &(_udpCtx.peerAddrLen));
+    client_info_t *client = (client_info_t *) context;
+    return udpReadDataFrom(buf, len, (struct sockaddr *) &(client->peerAddr), &(client->peerAddrLen));
 }
 
 /**
@@ -97,16 +101,16 @@ static void udpOnRead(uev_t *w, void *arg, int events) {
     ssize_t readSize = 0;
     ssize_t totalSize = 0;
     void *context = NULL;
-    while ((readSize = udpReadData(_udpCtx.dataBuffer, DATA_BUFFER_SIZE, context)) > 0) {
+    while ((readSize = udpReadData(_udpCtx.dataBuffer, DATA_BUFFER_SIZE, &(_udpCtx.tmpClientInfo))) > 0) {
         debugUdp("udp read data --[%d] bytes {%s}", readSize, log_hex_memory_32_bytes(_udpCtx.dataBuffer));
         totalSize += readSize;
         if (NULL != _udpTransport.forwardRead) {
-            _udpTransport.forwardRead(_udpCtx.dataBuffer, readSize, context);
+            _udpTransport.forwardRead(_udpCtx.dataBuffer, readSize, &(_udpCtx.tmpClientInfo));
         }
     }
 
     if (totalSize > 0 && NULL != _udpTransport.forwardReadFinish) {
-        _udpTransport.forwardReadFinish(totalSize, context);
+        _udpTransport.forwardReadFinish(totalSize, &(_udpCtx.tmpClientInfo));
     }
 }
 
@@ -139,14 +143,15 @@ static int udpStart() {
         return -1;
     }
 
-    memset(&(_udpCtx.peerAddr), 0, sizeof(_udpCtx.peerAddr));
-    _udpCtx.peerAddrLen = sizeof(_udpCtx.peerAddr);
-    _udpCtx.peerAddr.sin_family = AF_INET;
-    _udpCtx.peerAddr.sin_port = htons(_udpCtx.port);
-    _udpCtx.peerAddr.sin_addr = *((struct in_addr *) hostent->h_addr);
+    memset(&(_udpCtx.tmpClientInfo.peerAddr), 0, sizeof(_udpCtx.tmpClientInfo.peerAddr));
+    _udpCtx.tmpClientInfo.peerAddrLen = sizeof(_udpCtx.tmpClientInfo.peerAddr);
+    _udpCtx.tmpClientInfo.peerAddr.sin_family = AF_INET;
+    _udpCtx.tmpClientInfo.peerAddr.sin_port = htons(_udpCtx.port);
+    _udpCtx.tmpClientInfo.peerAddr.sin_addr = *((struct in_addr *) hostent->h_addr);
 
     if (_udpCtx.isServer &&
-        bind(_udpCtx.socketFd, (struct sockaddr *) &(_udpCtx.peerAddr), _udpCtx.peerAddrLen) == -1) {
+        bind(_udpCtx.socketFd, (struct sockaddr *) &(_udpCtx.tmpClientInfo.peerAddr),
+             _udpCtx.tmpClientInfo.peerAddrLen) == -1) {
         errf("server can not bind %s:%d", _udpCtx.host, _udpCtx.port);
         return -1;
     }

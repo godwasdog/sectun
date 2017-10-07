@@ -185,6 +185,11 @@ static int setupTransChain(sectun_args_t *args) {
             _transChain[_transChainIndexMax++] = sectunGetEncryptTransport();
         }
 
+        if (0 == strcmp("auth", transStr)) {
+            logf("auth transport ready");
+            _transChain[_transChainIndexMax++] = sectunGetAuthTransport();
+        }
+
         if (0 == strcmp("udp", transStr)) {
             // setup udp transport
             if (0 != (ret = sectunUdpInit(args->host, args->port, isServer))) {

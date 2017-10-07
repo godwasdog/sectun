@@ -28,7 +28,7 @@ typedef struct {
     char userToken[AUTH_USERTOKEN_LEN];
 
     // source address of UDP
-    struct sockaddr_storage peerAddr;
+    struct sockaddr_in peerAddr;
     socklen_t peerAddrLen;
 
     // input tun IP
