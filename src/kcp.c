@@ -358,8 +358,9 @@ int sectunKcpInit(sectun_kcp_config_t *config, int isServer) {
         _kcpCtx.config = *config;
     }
 
-    // client 初始创建一个 kcp 链接
-    if (NULL == kcpCreateConv(getClock())) {
+    // client 初始创建一个 kcp 链接  TODO: further implement
+    void *context = NULL;
+    if (NULL == kcpCreateConv(getClock(), context)) {
         return -1;
     }
 
