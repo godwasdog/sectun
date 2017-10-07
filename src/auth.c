@@ -44,12 +44,13 @@ client_info_t *sectunAuthFindClientByToken(const char *token) {
  * @return
  */
 int sectunAuthAddClient(const char *token, uint32_t tunIp) {
+    // alloc client
     client_info_t *client = malloc(sizeof(client_info_t));
     memcpy(client->userToken, token, AUTH_USERTOKEN_LEN);
     client->tunIp = tunIp;
     // add to hash
     HASH_ADD(tunIpToClient, _authCtx.tunIpToClientHash, tunIp, sizeof(uint32_t), client);
-    HASH_ADD(tokenToClient, _authCtx.tokenToClientHash, token, AUTH_USERTOKEN_LEN, client);
+    HASH_ADD(tokenToClient, _authCtx.tokenToClientHash, userToken, AUTH_USERTOKEN_LEN, client);
     return 0;
 }
 
