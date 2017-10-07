@@ -41,7 +41,7 @@ int sectunAuthAddClient(const char *token, uint32_t tunIp) {
 
 
 int sectunAuthInit() {
-    memset(_authCtx, 0, sizeof(_authCtx));
+    memset(&_authCtx, 0, sizeof(_authCtx));
     return 0;
 }
 
