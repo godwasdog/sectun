@@ -68,7 +68,7 @@ int sectunAuthAddClient(const char *token, uint32_t tunIp) {
 }
 
 
-ssize_t authWriteData(char *buffer, size_t len, void *context) {
+static ssize_t authWriteData(char *buffer, size_t len, void *context) {
 
     if (len + AUTH_USERTOKEN_LEN >= DATA_BUFFER_SIZE) {
         errf("authWriteData data is too large  len [%d] + AUTH_USERTOKEN_LEN [%d] >= DATA_BUFFER_SIZE [%d]", len,
@@ -88,7 +88,7 @@ ssize_t authWriteData(char *buffer, size_t len, void *context) {
     return len;
 }
 
-ssize_t authForwardRead(char *buffer, size_t len, void *context) {
+static ssize_t authForwardRead(char *buffer, size_t len, void *context) {
 
     // verify whether package contains valid user token
     const char *token = buffer + len - AUTH_USERTOKEN_LEN;
@@ -117,7 +117,7 @@ ssize_t authForwardRead(char *buffer, size_t len, void *context) {
     return len;
 }
 
-ssize_t authForwardReadFinish(size_t totalLen, void *context) {
+static ssize_t authForwardReadFinish(size_t totalLen, void *context) {
     if (NULL != _authTransport.forwardReadFinish) {
         client_info_t *tmpClient = (client_info_t *) context;
         client_info_t *client = sectunAuthFindClientByToken(tmpClient->userToken);
@@ -131,7 +131,7 @@ ssize_t authForwardReadFinish(size_t totalLen, void *context) {
     return totalLen;
 }
 
-void authSetNextLayer(struct itransport *transport) {
+static void authSetNextLayer(struct itransport *transport) {
     transport->forwardRead = authForwardRead;
     transport->forwardReadFinish = authForwardReadFinish;
     _authTransport.forwardWrite = transport->writeData;
@@ -168,6 +168,7 @@ int sectunAuthInit(const char *tokenStr, uint32_t tunIp, int isServer) {
     // init auth transport
     _authTransport = __dummyTransport;
     _authTransport.writeData = authWriteData;
+    _authTransport.setNextLayer = authSetNextLayer;
 
     // finish init
     _isAuthInit = 1;
