@@ -31,11 +31,14 @@ typedef struct {
     // in network order
     uint32_t tunIp;
 
-    UT_hash_handle hh;
+    UT_hash_handle tunIpToClient;
+    UT_hash_handle tokenToClient;
 } client_info_t;
 
 
 client_info_t *sectunAuthFindClientByTunIp(uint32_t tunIp);
+
+client_info_t *sectunAuthFindClientByToken(const char *token);
 
 int sectunAuthAddClient(const char *token, uint32_t tunIp);
 

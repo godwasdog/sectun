@@ -11,6 +11,7 @@
  */
 static struct {
     client_info_t *tunIpToClientHash;
+    client_info_t *tokenToClientHash;
 } _authCtx;
 
 /**
@@ -20,7 +21,18 @@ static struct {
  */
 client_info_t *sectunAuthFindClientByTunIp(uint32_t tunIp) {
     client_info_t *client;
-    HASH_FIND_INT(_authCtx.tunIpToClientHash, tunIp, client);
+    HASH_FIND(tunIpToClient, _authCtx.tunIpToClientHash, &tunIp, sizeof(uint32_t), client);
+    return client;
+}
+
+/**
+ *  find client info by token
+ * @param token
+ * @return
+ */
+client_info_t *sectunAuthFindClientByToken(const char *token) {
+    client_info_t *client;
+    HASH_FIND(tokenToClient, _authCtx.tokenToClientHash, token, AUTH_USERTOKEN_LEN, client);
     return client;
 }
 
@@ -35,7 +47,9 @@ int sectunAuthAddClient(const char *token, uint32_t tunIp) {
     client_info_t *client = malloc(sizeof(client_info_t));
     memcpy(client->userToken, token, AUTH_USERTOKEN_LEN);
     client->tunIp = tunIp;
-    HASH_ADD_INT(_authCtx.tunIpToClientHash, tunIp, client);
+    // add to hash
+    HASH_ADD(tunIpToClient, _authCtx.tunIpToClientHash, tunIp, sizeof(uint32_t), client);
+    HASH_ADD(tokenToClient, _authCtx.tokenToClientHash, token, AUTH_USERTOKEN_LEN, client);
     return 0;
 }
 
@@ -46,10 +60,5 @@ int sectunAuthInit() {
 }
 
 int sectunAuthStop() {
-    client_info_t *client, *tmp;
-    HASH_ITER(hh, _authCtx.tunIpToClientHash, client, tmp) {
-        HASH_DEL(_authCtx.tunIpToClientHash, client);
-        free(client);
-    }
     return 0;
 }
