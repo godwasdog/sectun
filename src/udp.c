@@ -124,6 +124,11 @@ static void udpOnRead(uev_t *w, void *arg, int events) {
     }
 }
 
+static void udpInitClientPeer(client_info_t *client) {
+    client->peerAddr = _udpCtx.tmpClientInfo.peerAddr;
+    client->peerAddrLen = _udpCtx.tmpClientInfo.peerAddrLen;
+}
+
 /**
  *  create a socket and start the event
  * @return
@@ -165,6 +170,9 @@ static int udpStart() {
         errf("server can not bind %s:%d", _udpCtx.host, _udpCtx.port);
         return -1;
     }
+
+    // 把所有 client 的 peer 初始化
+    sectunAuthIterateClientArray(udpInitClientPeer);
 
     // setup event handle
     const sectun_event_t *const pEvent = sectunGetEventInstance();

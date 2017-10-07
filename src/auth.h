@@ -58,6 +58,12 @@ int sectunAuthStop();
 void sectunAuthDumpClient(FILE *stream);
 
 /**
+ *  对每个 client 做操作
+ * @param func
+ */
+void sectunAuthIterateClientArray(void(*func)(client_info_t *client));
+
+/**
  *
  * 返回 singleton 的实例，常量不可更改
  *

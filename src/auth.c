@@ -193,3 +193,18 @@ struct itransport *const sectunGetAuthTransport() {
     assert(_isAuthInit > 0);
     return &_authTransport;
 }
+
+/**
+ *
+ * @param func
+ */
+void sectunAuthIterateClientArray(void(*func)(client_info_t *client)) {
+    if (NULL == func) {
+        return;
+    }
+
+    client_info_t *client, *tmp;
+    HASH_ITER(tunIpToClient, _authCtx.tunIpToClientHash, client, tmp) {
+        func(client);
+    }
+}
