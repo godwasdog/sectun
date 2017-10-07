@@ -309,7 +309,7 @@ void sectunArgDump(FILE *stream, sectun_args_t *args) {
     fprintf(stream, "encryptKey : [%s]\n", args->encryptKey);
 
     struct in_addr in;
-    in.s_addr = args->netip;
+    in.s_addr = htonl((uint32_t) args->netip);
     fprintf(stream, "netip : [%s]\n", inet_ntoa(in));
 
     fprintf(stream, "userToken : [%s]\n", args->userToken);
