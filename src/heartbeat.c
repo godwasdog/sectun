@@ -76,7 +76,8 @@ void timerHeartbeat(uev_t *w, void *arg, int events) {
         return;
     }
     //send hearbeat TODO: here is wrong, need further implement
-    sendHeartbeatMsg();
+    void *context = NULL;
+    sendHeartbeatMsg(context);
 }
 
 /**
