@@ -114,7 +114,7 @@ static void tunOnRead(uev_t *w, void *arg, int events) {
     client_info_t *client = NULL;
     while ((readSize = tunReadData(_tunCtx.dataBuffer, DATA_BUFFER_SIZE, NULL)) > 0) {
         totalSize += readSize;
-        debugTun("tun read data [%d] bytes {%s}", readSize, log_hex_memory_32_bytes(_dataBuffer));
+        debugTun("tun read data [%d] bytes {%s}", readSize, log_hex_memory_32_bytes(_tunCtx.dataBuffer));
 
         ipv4_hdr_t *iphdr = (ipv4_hdr_t *) _tunCtx.dataBuffer;
         if ((iphdr->ver & 0xf0) != 0x40) {
@@ -123,7 +123,7 @@ static void tunOnRead(uev_t *w, void *arg, int events) {
             continue;
         }
         uint32_t tunIp = 0;
-        if (isServer) {
+        if (_tunCtx.isServer) {
             tunIp = ntohl(iphdr->daddr);
         } else {
             tunIp = ntohl(iphdr->saddr);
@@ -142,7 +142,7 @@ static void tunOnRead(uev_t *w, void *arg, int events) {
             struct in_addr in;
             in.s_addr = htonl((uint32_t) tunIp);
             errf("tunip : [%s] find no client\n", inet_ntoa(in));
-            return -1;
+            continue;
         }
 
         _tunTransport.forwardRead(_tunCtx.dataBuffer, readSize, client);
