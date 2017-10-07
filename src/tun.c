@@ -3,6 +3,7 @@
 //
 
 #include <sys/types.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -10,7 +11,6 @@
 #include <assert.h>
 #include <fcntl.h>
 
-#include <fcntl.h>
 #include <linux/if_tun.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
