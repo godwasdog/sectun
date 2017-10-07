@@ -183,7 +183,7 @@ static ssize_t kcpOnRead(char *buf, size_t len, void *context) {
         if (conv != _kcpCtx.conv) {
             // we need to create a new kcp conv
             kcpStopConv();
-            if (NULL == kcpCreateConv(conv)) {
+            if (NULL == kcpCreateConv(conv, context)) {
                 errf("can not create new kcp conv");
                 exit(-1);
             }
