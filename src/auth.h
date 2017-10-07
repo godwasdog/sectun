@@ -13,6 +13,8 @@
 
 #include "3rd/uthash/uthash.h"
 
+#define AUTH_USERTOKEN_LEN  8
+
 /* the structure to store known client addresses for the server */
 typedef struct {
     // user token

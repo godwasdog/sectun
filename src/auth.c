@@ -6,9 +6,6 @@
 #include "inc.h"
 #include "auth.h"
 
-#define AUTH_USERTOKEN_LEN  8
-
-
 /**
  * auth context
  */
