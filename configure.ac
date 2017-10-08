@@ -22,7 +22,7 @@ LT_INIT
 #AC_DEFINE(DEBUG_UDP,    0, [log udp debug message])
 #AC_DEFINE(DEBUG_AUTH,    0, [log udp debug message])
 #AC_DEFINE(DEBUG_ENCRYPT, 0, [log encrypt debug message])
-#AC_DEFINE(DEBUG_HEARTBEAT, 0, [log encrypt debug message])
+AC_DEFINE(DEBUG_HEARTBEAT, 0, [log encrypt debug message])
 #AC_DEFINE(DEBUG_KCP,    0, [log kcp debug message])
 #AC_DEFINE(DEBUG_TUN,    0, [log tun debug message])
 #AC_DEFINE(DEBUG_MAIN,    0, [log tun debug message])

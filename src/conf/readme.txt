@@ -15,10 +15,10 @@ we use mtu 1380 is a good choice
 
 transport configuration can be combination like these
 
-1. kcp+heartbeat+encrypt+udp
-2. heartbeat+encrypt+udp
-3. encrypt+udp
-4. udp
+1. kcp+auth+heartbeat+encrypt+udp
+2. auth+heartbeat+encrypt+udp
+3. auth+encrypt+udp
+4. auth+udp
 
 make sure heartbeat is before encrypt, so encrpyt would encrypt heartbeat data as well
 

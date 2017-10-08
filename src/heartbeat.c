@@ -10,6 +10,7 @@
 #include "event.h"
 #include "itransport.h"
 #include "log.h"
+#include "auth.h"
 #include "heartbeat.h"
 
 #ifdef DEBUG_HEARTBEAT
@@ -57,6 +58,10 @@ static ssize_t sendHeartbeatMsg(void *context) {
     return _hearbeatTransport.forwardWrite(buffer, len, context);
 }
 
+static void sendHeartbeatMsg_1(client_info_t *client) {
+    sendHeartbeatMsg(client);
+}
+
 /**
  *  only client would run this timer, server will never run this
  *
@@ -75,9 +80,8 @@ void timerHeartbeat(uev_t *w, void *arg, int events) {
         sectunRestartTransport(&_hearbeatTransport);
         return;
     }
-    //send hearbeat TODO: here is wrong, need further implement
-    void *context = NULL;
-    sendHeartbeatMsg(context);
+    //send hearbeat
+    sectunAuthIterateClientArray(sendHeartbeatMsg_1);
 }
 
 /**
@@ -123,7 +127,8 @@ ssize_t hearbeatForwardRead(char *buffer, size_t len, void *context) {
         return _hearbeatTransport.forwardRead(buffer, len, context);
     }
 
-    errf("heartbeat bad magic char [%02x]", magic);
+    // invalid packet, we may under attack, drop the packet here
+    debugHeartbeat("heartbeat bad magic char [%02x]", magic);
     return len;
 }
 
