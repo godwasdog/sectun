@@ -11,6 +11,7 @@
 #include "itransport.h"
 #include "log.h"
 #include "auth.h"
+#include "util.h"
 #include "heartbeat.h"
 
 #ifdef DEBUG_HEARTBEAT
@@ -53,7 +54,11 @@ static ssize_t sendHeartbeatMsg(void *context) {
     int len = strlen(buffer);
     buffer[len++] = HEARTBEAT_MAGIC_NOP;
 
-    debugHeartbeat("send hearbeat msg");
+#ifdef DEBUG_HEARTBEAT
+    client_info_t *client = (client_info_t *) context;
+        debugHeartbeat("send hearbeat msg to user toke [%.*s] tunip [%s]",
+                       AUTH_USERTOKEN_LEN, client->userToken, ipToString(client->tunIp));
+#endif
 
     return _hearbeatTransport.forwardWrite(buffer, len, context);
 }
@@ -109,7 +114,11 @@ ssize_t hearbeatForwardRead(char *buffer, size_t len, void *context) {
 
     if (HEARTBEAT_MAGIC_NOP == magic) {
 
-        debugHeartbeat("recv hearbeat msg");
+#ifdef DEBUG_HEARTBEAT
+        client_info_t *client = (client_info_t *) context;
+        debugHeartbeat("recv hearbeat msg from user toke [%.*s] tunip [%s]",
+                       AUTH_USERTOKEN_LEN, client->userToken, ipToString(client->tunIp));
+#endif
 
         if (_hearbeatCtx.isServer) {
             // server send back msg
