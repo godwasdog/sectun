@@ -45,16 +45,36 @@ typedef struct {
 } client_info_t;
 
 
+/**
+ *
+ * @param tunIp
+ * @return
+ */
 client_info_t *sectunAuthFindClientByTunIp(uint32_t tunIp);
 
-client_info_t *sectunAuthFindClientByToken(const char *token);
-
+/**
+ *  add a new client
+ * @param token
+ * @param tunIp
+ * @return
+ */
 int sectunAuthAddClient(const char *token, uint32_t tunIp);
 
+/**
+ * init auth transport
+ *
+ * @param tokenStr
+ * @param tunIp
+ * @param isServer
+ * @return
+ */
 int sectunAuthInit(const char *tokenStr, uint32_t tunIp, int isServer);
 
-int sectunAuthStop();
-
+/**
+ * dump auth client list
+ *
+ * @param stream
+ */
 void sectunAuthDumpClient(FILE *stream);
 
 /**

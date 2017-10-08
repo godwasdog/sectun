@@ -42,7 +42,7 @@ client_info_t *sectunAuthFindClientByTunIp(uint32_t tunIp) {
  * @param token
  * @return
  */
-client_info_t *sectunAuthFindClientByToken(const char *token) {
+static client_info_t *authFindClientByToken(const char *token) {
     client_info_t *client = NULL;
     HASH_FIND(tokenToClient, _authCtx.tokenToClientHash, token, AUTH_USERTOKEN_LEN, client);
     return client;
@@ -67,7 +67,14 @@ int sectunAuthAddClient(const char *token, uint32_t tunIp) {
     return 0;
 }
 
-
+/**
+ *  write data
+ *
+ * @param buffer
+ * @param len
+ * @param context
+ * @return
+ */
 static ssize_t authWriteData(char *buffer, size_t len, void *context) {
 
     if (len + AUTH_USERTOKEN_LEN >= DATA_BUFFER_SIZE) {
@@ -77,10 +84,12 @@ static ssize_t authWriteData(char *buffer, size_t len, void *context) {
     }
 
     client_info_t *client = (client_info_t *) context;
+
     // put user token at the end of the package
     debugAuth("authWriteData user token[%.*s]", AUTH_USERTOKEN_LEN, client->userToken);
     memcpy(buffer + len, client->userToken, AUTH_USERTOKEN_LEN);
     len += AUTH_USERTOKEN_LEN;
+
     if (NULL != _authTransport.forwardWrite) {
         return _authTransport.forwardWrite(buffer, len, context);
     }
@@ -88,17 +97,25 @@ static ssize_t authWriteData(char *buffer, size_t len, void *context) {
     return len;
 }
 
+/**
+ * forward read
+ *
+ * @param buffer
+ * @param len
+ * @param context
+ * @return
+ */
 static ssize_t authForwardRead(char *buffer, size_t len, void *context) {
 
     // verify whether package contains valid user token
     const char *token = buffer + len - AUTH_USERTOKEN_LEN;
-    client_info_t *client = sectunAuthFindClientByToken(token);
+    client_info_t *client = authFindClientByToken(token);
     if (NULL == client) {
         errf("invalid user token [%.*s] recv", AUTH_USERTOKEN_LEN, token);
         return -1;
     }
 
-    // remove user token from package
+    // remove user token from packet
     len -= AUTH_USERTOKEN_LEN;
 
     // update client peerAddr
@@ -128,10 +145,16 @@ static ssize_t authForwardRead(char *buffer, size_t len, void *context) {
     return len;
 }
 
+/**
+ *
+ * @param totalLen
+ * @param context
+ * @return
+ */
 static ssize_t authForwardReadFinish(size_t totalLen, void *context) {
     if (NULL != _authTransport.forwardReadFinish) {
         client_info_t *tmpClient = (client_info_t *) context;
-        client_info_t *client = sectunAuthFindClientByToken(tmpClient->userToken);
+        client_info_t *client = authFindClientByToken(tmpClient->userToken);
         if (NULL == client) {
             errf("invalid user token [%.*s] recv", AUTH_USERTOKEN_LEN, tmpClient->userToken);
             return -1;
@@ -142,12 +165,23 @@ static ssize_t authForwardReadFinish(size_t totalLen, void *context) {
     return totalLen;
 }
 
+/**
+ *
+ * @param transport
+ */
 static void authSetNextLayer(struct itransport *transport) {
     transport->forwardRead = authForwardRead;
     transport->forwardReadFinish = authForwardReadFinish;
     _authTransport.forwardWrite = transport->writeData;
 }
 
+/**
+ *
+ * @param tokenStr
+ * @param tunIp
+ * @param isServer
+ * @return
+ */
 int sectunAuthInit(const char *tokenStr, uint32_t tunIp, int isServer) {
     memset(&_authCtx, 0, sizeof(_authCtx));
 
@@ -186,26 +220,17 @@ int sectunAuthInit(const char *tokenStr, uint32_t tunIp, int isServer) {
     return 0;
 }
 
-int sectunAuthStop() {
-    return 0;
-}
-
-
-void sectunAuthDumpClient(FILE *stream) {
-    client_info_t *client, *tmp;
-    HASH_ITER(tunIpToClient, _authCtx.tunIpToClientHash, client, tmp) {
-        struct in_addr in;
-        in.s_addr = htonl((uint32_t) client->tunIp);
-        fprintf(stream, "userToken [%.*s] assign netip : [%s]\n", AUTH_USERTOKEN_LEN, client->userToken, inet_ntoa(in));
-    }
-}
-
+/**
+ *
+ * @return
+ */
 struct itransport *const sectunGetAuthTransport() {
     assert(_isAuthInit > 0);
     return &_authTransport;
 }
 
 /**
+ * iterate all client info , call func that user provide
  *
  * @param func
  */
@@ -217,5 +242,19 @@ void sectunAuthIterateClientArray(void(*func)(client_info_t *client)) {
     client_info_t *client, *tmp;
     HASH_ITER(tunIpToClient, _authCtx.tunIpToClientHash, client, tmp) {
         func(client);
+    }
+}
+
+/**
+ *  dump client info for debug purpose
+ *
+ * @param stream
+ */
+void sectunAuthDumpClient(FILE *stream) {
+    client_info_t *client, *tmp;
+    HASH_ITER(tunIpToClient, _authCtx.tunIpToClientHash, client, tmp) {
+        struct in_addr in;
+        in.s_addr = htonl((uint32_t) client->tunIp);
+        fprintf(stream, "userToken [%.*s] assign netip : [%s]\n", AUTH_USERTOKEN_LEN, client->userToken, inet_ntoa(in));
     }
 }
