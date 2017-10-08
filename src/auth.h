@@ -41,8 +41,8 @@ typedef struct {
     // kcp object
     ikcpcb *pKcp;
 
+    // hash handle
     UT_hash_handle tunIpToClient;
-    UT_hash_handle tokenToClient;
 } client_info_t;
 
 

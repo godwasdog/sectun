@@ -20,7 +20,6 @@
  */
 static struct {
     client_info_t *tunIpToClientHash;
-    client_info_t *tokenToClientHash;
 } _authCtx;
 
 static struct itransport _authTransport;
@@ -34,17 +33,6 @@ static int _isAuthInit = 0;
 client_info_t *sectunAuthFindClientByTunIp(uint32_t tunIp) {
     client_info_t *client = NULL;
     HASH_FIND(tunIpToClient, _authCtx.tunIpToClientHash, &tunIp, sizeof(uint32_t), client);
-    return client;
-}
-
-/**
- *  find client info by token
- * @param token
- * @return
- */
-static client_info_t *authFindClientByToken(const char *token) {
-    client_info_t *client = NULL;
-    HASH_FIND(tokenToClient, _authCtx.tokenToClientHash, token, AUTH_USERTOKEN_LEN, client);
     return client;
 }
 
@@ -63,7 +51,6 @@ int sectunAuthAddClient(const char *token, uint32_t tunIp) {
     client->tunIp = tunIp;
     // add to hash
     HASH_ADD(tunIpToClient, _authCtx.tunIpToClientHash, tunIp, sizeof(uint32_t), client);
-    HASH_ADD(tokenToClient, _authCtx.tokenToClientHash, userToken, AUTH_USERTOKEN_LEN, client);
     return 0;
 }
 
@@ -142,10 +129,11 @@ static ssize_t authForwardRead(char *buffer, size_t len, void *context) {
 
     client->peerAddr = tmpClient->peerAddr;
     client->peerAddrLen = tmpClient->peerAddrLen;
-    // copy user token to tmp client
-    memcpy(tmpClient->userToken, client->userToken, AUTH_USERTOKEN_LEN);
+    // copy tunIp
+    tmpClient->tunIp = client->tunIp;
 
-    debugAuth("authForwardRead user token[%.*s]", AUTH_USERTOKEN_LEN, client->userToken);
+    debugAuth("authForwardRead user token[%.*s] tunip [%s]", AUTH_USERTOKEN_LEN, client->userToken,
+              ipToString(client->tunIp));
 
     if (_authTransport.forwardRead) {
         return _authTransport.forwardRead(buffer, len, client);
@@ -163,7 +151,7 @@ static ssize_t authForwardRead(char *buffer, size_t len, void *context) {
 static ssize_t authForwardReadFinish(size_t totalLen, void *context) {
     if (NULL != _authTransport.forwardReadFinish) {
         client_info_t *tmpClient = (client_info_t *) context;
-        client_info_t *client = authFindClientByToken(tmpClient->userToken);
+        client_info_t *client = sectunAuthFindClientByTunIp(tmpClient->tunIp);
         if (NULL == client) {
             errf("invalid user token [%.*s] recv", AUTH_USERTOKEN_LEN, tmpClient->userToken);
             return -1;
