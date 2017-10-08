@@ -19,6 +19,7 @@ transport configuration can be combination like these
 2. auth+heartbeat+encrypt+udp
 3. auth+encrypt+udp
 4. auth+udp
+5. udp
 
 make sure heartbeat is before encrypt, so encrpyt would encrypt heartbeat data as well
 

@@ -10,7 +10,7 @@
   "userToken": "8wegno3a",
   "heartbeatInterval": "30",
   "heartbeatTimeout": "60",
-  "transport": "auth+heartbeat+encrypt+udp",
+  "transport": "kcp+auth+heartbeat+encrypt+udp",
   "upScript": "client-global_up.sh",
   "downScript": "client-global_down.sh",
   "kcp": {

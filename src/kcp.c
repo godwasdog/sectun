@@ -12,6 +12,7 @@
 #include "inc.h"
 #include "log.h"
 #include "event.h"
+#include "auth.h"
 #include "kcp.h"
 #include "util.h"
 
@@ -27,10 +28,6 @@ static struct {
     sectun_kcp_config_t config;
     //databuferr
     char dataBuffer[DATA_BUFFER_SIZE];
-    // kcp connection number
-    IUINT32 conv;
-    // kcp object
-    ikcpcb *pKcp;
     // kcp timer used to do update
     uev_t timerEvent;
 } _kcpCtx;
@@ -65,6 +62,16 @@ static IUINT32 getClock() {
 }
 
 /**
+ * update client kcp
+ * @param client
+ */
+static void kcpUpdateClientKcp(client_info_t *client) {
+    if (0 != client->conv && NULL != client->pKcp) {
+        ikcp_update(client->pKcp, getClock());
+    }
+}
+
+/**
  *  do kcp update every time
  *
  * @param w
@@ -73,27 +80,31 @@ static IUINT32 getClock() {
  */
 void timerKcpUpdate(uev_t *w, void *arg, int events) {
     // do kcp update
-    ikcp_update(_kcpCtx.pKcp, getClock());
+    sectunAuthIterateClientArray(kcpUpdateClientKcp);
 }
 
 /**
  *  创建一个 kcp 链接
  *
- *  TODO: here needs further implement
  *
  * @param conv
  * @return
  */
 static ikcpcb *kcpCreateConv(IUINT32 conv, void *context) {
 
-    assert(NULL == _kcpCtx.pKcp);
+    assert(NULL != context);
+
+    client_info_t *client = (client_info_t *) context;
+
+    assert(NULL == client->pKcp);
 
     // save conv
-    _kcpCtx.conv = conv;
+    client->conv = conv;
+    client->pKcp = ikcp_create(client->conv, context);
 
-    _kcpCtx.pKcp = ikcp_create(_kcpCtx.conv, context);
-    if (NULL == _kcpCtx.pKcp) {
-        err("can not create ikcp");
+    if (NULL == client->pKcp) {
+        err("can not create ikcp for user token [%.*s] tunip [%s]",
+            AUTH_USERTOKEN_LEN, client->userToken, ipToString(client->tunIp));
         return NULL;
     }
 
@@ -103,40 +114,36 @@ static ikcpcb *kcpCreateConv(IUINT32 conv, void *context) {
     }
 
     // do kcp config
-    ikcp_nodelay(_kcpCtx.pKcp, _kcpCtx.config.nodelay, _kcpCtx.config.interval,
+    ikcp_nodelay(client->pKcp, _kcpCtx.config.nodelay, _kcpCtx.config.interval,
                  _kcpCtx.config.resend, _kcpCtx.config.nc);
-    ikcp_wndsize(_kcpCtx.pKcp, _kcpCtx.config.sndwnd, _kcpCtx.config.rcvwnd);
-    ikcp_setmtu(_kcpCtx.pKcp, _kcpCtx.config.mtu);
+    ikcp_wndsize(client->pKcp, _kcpCtx.config.sndwnd, _kcpCtx.config.rcvwnd);
+    ikcp_setmtu(client->pKcp, _kcpCtx.config.mtu);
 
     // set output function
-    ikcp_setoutput(_kcpCtx.pKcp, kcpOutput);
+    ikcp_setoutput(client->pKcp, kcpOutput);
 
     // extra paramter
     //_pKcp->rx_minrto = 10;
     //_pKcp->fastresend = 1;
 
-    // setup kcp update timer
-    const sectun_event_t *pEvent = sectunGetEventInstance();
-    pEvent->timer_init(&(_kcpCtx.timerEvent), timerKcpUpdate, NULL, _kcpCtx.config.interval, _kcpCtx.config.interval);
-    pEvent->timer_start(&(_kcpCtx.timerEvent));
-
-    return _kcpCtx.pKcp;
+    return client->pKcp;
 }
 
 /**
  *  stop kcp connection
  */
-static void kcpStopConv() {
+static void kcpStopConv(void *context) {
 
-    assert(NULL != _kcpCtx.pKcp);
+    assert(NULL != context);
 
-    // stop timer
-    const sectun_event_t *pEvent = sectunGetEventInstance();
-    pEvent->timer_stop(&(_kcpCtx.timerEvent));
+    client_info_t *client = (client_info_t *) context;
+
+    assert(NULL != client->pKcp);
 
     // release kcp object
-    ikcp_release(_kcpCtx.pKcp);
-    _kcpCtx.pKcp = NULL;
+    ikcp_release(client->pKcp);
+    client->pKcp = NULL;
+    client->conv = 0;
 }
 
 /**
@@ -146,13 +153,21 @@ static void kcpStopConv() {
  * @return
  */
 static ssize_t kcpWriteData(char *buf, size_t len, void *context) {
-    return ikcp_send(_kcpCtx.pKcp, buf, len);
+    client_info_t *client = (client_info_t *) context;
+    return ikcp_send(client->pKcp, buf, len);
 }
 
+/**
+ *
+ * @param totalLen
+ * @param context
+ * @return
+ */
 static ssize_t kcpForwardWriteFinish(size_t totalLen, void *context) {
     debugKcp("kcpForwardWriteFinish [%d] bytes", totalLen);
     // flush data, force to send
-    ikcp_flush(_kcpCtx.pKcp);
+    client_info_t *client = (client_info_t *) context;
+    ikcp_flush(client->pKcp);
     return totalLen;
 }
 
@@ -163,7 +178,8 @@ static ssize_t kcpForwardWriteFinish(size_t totalLen, void *context) {
  * @return
  */
 static ssize_t kcpReadData(char *buf, size_t len, void *context) {
-    return ikcp_recv(_kcpCtx.pKcp, buf, len);
+    client_info_t *client = (client_info_t *) context;
+    return ikcp_recv(client->pKcp, buf, len);
 }
 
 /**
@@ -176,22 +192,24 @@ static ssize_t kcpReadData(char *buf, size_t len, void *context) {
  */
 static ssize_t kcpOnRead(char *buf, size_t len, void *context) {
 
+    client_info_t *client = (client_info_t *) context;
+
     if (_kcpCtx.isServer) {
 
         IUINT32 conv = ikcp_getconv(buf);
 
-        if (conv != _kcpCtx.conv) {
+        if (conv != client->conv) {
             // we need to create a new kcp conv
-            kcpStopConv();
+            kcpStopConv(context);
             if (NULL == kcpCreateConv(conv, context)) {
-                errf("can not create new kcp conv");
+                errf("can not create new kcp conv for tunip [%s]", ipToString(client->tunIp));
                 exit(-1);
             }
-            logf("create new kcp conv [%lu]", conv);
+            logf("create new kcp conv [%lu] for tunip [%s]", conv, ipToString(client->tunIp));
         }
     }
     // set input
-    return ikcp_input(_kcpCtx.pKcp, buf, len);
+    return ikcp_input(client->pKcp, buf, len);
 }
 
 /**
@@ -334,6 +352,26 @@ void sectunKcpLoadDefaultConfig(sectun_kcp_config_t *config) {
     config->mtu = 1380 + 24;
 }
 
+static int kcpStart() {
+    // setup kcp update timer
+    const sectun_event_t *pEvent = sectunGetEventInstance();
+    pEvent->timer_init(&(_kcpCtx.timerEvent), timerKcpUpdate, NULL, _kcpCtx.config.interval, _kcpCtx.config.interval);
+    pEvent->timer_start(&(_kcpCtx.timerEvent));
+}
+
+static int kcpStop() {
+    // stop timer
+    const sectun_event_t *pEvent = sectunGetEventInstance();
+    pEvent->timer_stop(&(_kcpCtx.timerEvent));
+}
+
+/**
+ *
+ * @param client
+ */
+static void kcpCreateForClient(client_info_t *client) {
+    kcpCreateConv(getClock(), client);
+}
 
 /**
  *  kcp 初始化参数设置
@@ -358,17 +396,16 @@ int sectunKcpInit(sectun_kcp_config_t *config, int isServer) {
         _kcpCtx.config = *config;
     }
 
-    // client 初始创建一个 kcp 链接  TODO: further implement
-    void *context = NULL;
-    if (NULL == kcpCreateConv(getClock(), context)) {
-        return -1;
-    }
+    // client 初始创建一个 kcp 链接
+    sectunAuthIterateClientArray(kcpCreateForClient);
 
     // setup _kcpTransport
     _kcpTransport = __dummyTransport;
 
     _kcpTransport.writeData = kcpWriteData;
     _kcpTransport.readData = kcpReadData;
+    _kcpTransport.start = kcpStart;
+    _kcpTransport.stop = kcpStop;
     _kcpTransport.forwardWriteFinish = kcpForwardWriteFinish;
     _kcpTransport.setNextLayer = kcpSetNextLayerTransport;
 
@@ -387,5 +424,3 @@ struct itransport *const sectunGetKcpTransport() {
     assert(_isKcpInit > 0);
     return &_kcpTransport;
 }
-
-
