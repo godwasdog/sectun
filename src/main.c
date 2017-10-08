@@ -144,10 +144,10 @@ static int setupTransChain(sectun_args_t *args) {
      *
      *  transport chain such as
      *
-     *  kcp+heartbeat+encrypt+udp
-     *  heartbeat+encrypt+udp
-     *  encrypt+udp
-     *  udp
+     *  kcp+auth+heartbeat+encrypt+udp
+     *  auth+heartbeat+encrypt+udp
+     *  auth+encrypt+udp
+     *  auth+udp
      *
      * ************************************************************************/
 
