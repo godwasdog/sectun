@@ -117,7 +117,7 @@ static ssize_t authWriteData(char *buffer, size_t len, void *context) {
 static ssize_t authForwardRead(char *buffer, size_t len, void *context) {
 
     // verify whether packet contains valid user token
-    uint32_t tunIp = ntohl((uint32_t) *(buffer + len - AUTH_TUNIP_LEN));
+    uint32_t tunIp = ntohl(*((uint32_t *) (buffer + len - AUTH_TUNIP_LEN)));
     const char *token = buffer + len - AUTH_TUNIP_LEN - AUTH_USERTOKEN_LEN;
 
     client_info_t *client = sectunAuthFindClientByTunIp(tunIp);
