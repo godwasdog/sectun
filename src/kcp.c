@@ -103,8 +103,8 @@ static ikcpcb *kcpCreateConv(IUINT32 conv, void *context) {
     client->pKcp = ikcp_create(client->conv, context);
 
     if (NULL == client->pKcp) {
-        err("can not create ikcp for user token [%.*s] tunip [%s]",
-            AUTH_USERTOKEN_LEN, client->userToken, ipToString(client->tunIp));
+        errf("can not create ikcp for user token [%.*s] tunip [%s]",
+             AUTH_USERTOKEN_LEN, client->userToken, ipToString(client->tunIp));
         return NULL;
     }
 
