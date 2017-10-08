@@ -64,14 +64,7 @@ static ssize_t udpWriteData(char *buf, size_t len, void *context) {
     debugUdp("udp write data --[%d] bytes {%s}", len, log_hex_memory_32_bytes(buf));
     client_info_t *client = (client_info_t *) context;
 
-
-#ifdef DEBUG_UDP
-
-    struct in_addr in;
-    in.s_addr = htonl((uint32_t) client->tunIp);
-    debugUdp("udpWriteData  tunip : [%s] \n", inet_ntoa(in));
-
-#endif
+    debugUdp("udpWriteData  tunip : [%s] \n", ipToString(client->tunIp));
 
     return sendto(_udpCtx.socketFd, buf, len, 0,
                   (const struct sockaddr *) &(client->peerAddr), client->peerAddrLen);

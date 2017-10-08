@@ -5,6 +5,8 @@
 #ifndef SECTUN_UTIL_H
 #define SECTUN_UTIL_H
 
+#include <stdint.h>
+
 /**
  *  dump string
  *
@@ -13,5 +15,13 @@
  * @return
  */
 char *utilDupStr(const char *str, int len);
+
+/**
+ *  turn ip number to display string
+ *
+ * @param ip
+ * @return
+ */
+const char *ipToString(uint32_t ip);
 
 #endif //SECTUN_UTIL_H

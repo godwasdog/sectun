@@ -70,6 +70,10 @@ int sectunAuthAddClient(const char *token, uint32_t tunIp) {
 /**
  *  write data
  *
+ *  ---------------------------------
+ *     data  |  user token | tun ip
+ *  ---------------------------------
+ *
  * @param buffer
  * @param len
  * @param context
@@ -77,9 +81,9 @@ int sectunAuthAddClient(const char *token, uint32_t tunIp) {
  */
 static ssize_t authWriteData(char *buffer, size_t len, void *context) {
 
-    if (len + AUTH_USERTOKEN_LEN >= DATA_BUFFER_SIZE) {
-        errf("authWriteData data is too large  len [%d] + AUTH_USERTOKEN_LEN [%d] >= DATA_BUFFER_SIZE [%d]", len,
-             AUTH_USERTOKEN_LEN, DATA_BUFFER_SIZE);
+    if (len + AUTH_USERTOKEN_LEN + AUTH_TUNIP_LEN >= DATA_BUFFER_SIZE) {
+        errf("authWriteData Error len [%d] + AUTH_USERTOKEN_LEN [%d] + AUTH_TUNIP_LEN [%d] >= DATA_BUFFER_SIZE [%d]",
+             len, AUTH_USERTOKEN_LEN, AUTH_TUNIP_LEN, DATA_BUFFER_SIZE);
         return -1;
     }
 
@@ -87,8 +91,12 @@ static ssize_t authWriteData(char *buffer, size_t len, void *context) {
 
     // put user token at the end of the package
     debugAuth("authWriteData user token[%.*s]", AUTH_USERTOKEN_LEN, client->userToken);
+    // copy user token
     memcpy(buffer + len, client->userToken, AUTH_USERTOKEN_LEN);
-    len += AUTH_USERTOKEN_LEN;
+    // copy tun ip
+    memcpy(buffer + len + AUTH_USERTOKEN_LEN, &(client->tunIp), AUTH_TUNIP_LEN);
+
+    len += AUTH_USERTOKEN_LEN + AUTH_TUNIP_LEN;
 
     if (NULL != _authTransport.forwardWrite) {
         return _authTransport.forwardWrite(buffer, len, context);
@@ -107,26 +115,26 @@ static ssize_t authWriteData(char *buffer, size_t len, void *context) {
  */
 static ssize_t authForwardRead(char *buffer, size_t len, void *context) {
 
-    // verify whether package contains valid user token
-    const char *token = buffer + len - AUTH_USERTOKEN_LEN;
-    client_info_t *client = authFindClientByToken(token);
-    if (NULL == client) {
-        errf("invalid user token [%.*s] recv", AUTH_USERTOKEN_LEN, token);
+    // verify whether packet contains valid user token
+    uint32_t tunIp = (uint32_t) *(buffer + len - AUTH_TUNIP_LEN);
+    const char *token = buffer + len - AUTH_TUNIP_LEN - AUTH_USERTOKEN_LEN;
+
+    client_info_t *client = sectunAuthFindClientByTunIp(tunIp);
+    if (NULL == client || 0 != strncmp(client->userToken, token, AUTH_USERTOKEN_LEN)) {
+        errf("invalid user token [%.*s] tunIp [%s]", AUTH_USERTOKEN_LEN, token, ipToString(tunIp));
         return -1;
     }
 
-    // remove user token from packet
-    len -= AUTH_USERTOKEN_LEN;
+    // remove user token tun ip from packet
+    len -= (AUTH_USERTOKEN_LEN + AUTH_TUNIP_LEN);
 
     // update client peerAddr
     client_info_t *tmpClient = (client_info_t *) context;
 
     // check new connect
     if (client->peerAddr.sin_port != tmpClient->peerAddr.sin_port) {
-        struct in_addr in;
-        in.s_addr = htonl((uint32_t) client->tunIp);
         logf("auth user token [%.*s] tunip [%s] connect from [%s:%lu]",
-             AUTH_USERTOKEN_LEN, client->userToken, inet_ntoa(in),
+             AUTH_USERTOKEN_LEN, client->userToken, ipToString(client->tunIp),
              inet_ntoa(((struct sockaddr_in *) &(tmpClient->peerAddr))->sin_addr),
              ntohs(tmpClient->peerAddr.sin_port));
     }
@@ -253,8 +261,7 @@ void sectunAuthIterateClientArray(void(*func)(client_info_t *client)) {
 void sectunAuthDumpClient(FILE *stream) {
     client_info_t *client, *tmp;
     HASH_ITER(tunIpToClient, _authCtx.tunIpToClientHash, client, tmp) {
-        struct in_addr in;
-        in.s_addr = htonl((uint32_t) client->tunIp);
-        fprintf(stream, "userToken [%.*s] assign netip : [%s]\n", AUTH_USERTOKEN_LEN, client->userToken, inet_ntoa(in));
+        fprintf(stream, "userToken [%.*s] assign netip : [%s]\n", AUTH_USERTOKEN_LEN,
+                client->userToken, ipToString(client->tunIp));
     }
 }

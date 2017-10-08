@@ -129,19 +129,11 @@ static void tunOnRead(uev_t *w, void *arg, int events) {
             tunIp = ntohl(iphdr->saddr);
         }
 
-#ifdef DEBUG_TUN
-
-        struct in_addr in;
-        in.s_addr = htonl((uint32_t) tunIp);
-        debugTun("tunOnRead  tunip : [%s] \n", inet_ntoa(in));
-
-#endif
+        debugTun("tunOnRead  tunip : [%s] \n", ipToString(tunIp));
 
         client = sectunAuthFindClientByTunIp(tunIp);
         if (NULL == client) {
-            struct in_addr in;
-            in.s_addr = htonl((uint32_t) tunIp);
-            errf("tunip : [%s] find no client\n", inet_ntoa(in));
+            errf("tunip : [%s] find no client\n", ipToString(tunIp));
             continue;
         }
 

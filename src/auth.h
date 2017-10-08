@@ -20,6 +20,7 @@
 #include "itransport.h"
 
 #define AUTH_USERTOKEN_LEN  8
+#define AUTH_TUNIP_LEN      sizeof(uint32_t)
 #define AUTH_USERTOKEN_DELIMITER    ","
 
 /* the structure to store known client addresses for the server */

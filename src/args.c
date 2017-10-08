@@ -307,11 +307,7 @@ void sectunArgDump(FILE *stream, sectun_args_t *args) {
     fprintf(stream, "mtu : [%d]\n", args->mtu);
     fprintf(stream, "encrypt : [%s]\n", args->encrypt);
     fprintf(stream, "encryptKey : [%s]\n", args->encryptKey);
-
-    struct in_addr in;
-    in.s_addr = htonl((uint32_t) args->netip);
-    fprintf(stream, "netip : [%s]\n", inet_ntoa(in));
-
+    fprintf(stream, "netip : [%s]\n", ipToString(args->netip));
     fprintf(stream, "userToken : [%s]\n", args->userToken);
     fprintf(stream, "userTokenList : [%s]\n", args->userTokenList);
     fprintf(stream, "heartbeatInterval : [%lu]\n", args->heartbeatInterval);

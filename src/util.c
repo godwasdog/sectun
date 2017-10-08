@@ -4,6 +4,10 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "inc.h"
 #include "log.h"
@@ -36,4 +40,15 @@ char *utilDupStr(const char *str, int len) {
     }
     pCur += len + 1;
     return pStr;
+}
+
+/**
+ *
+ * @param ip
+ * @return
+ */
+const char *ipToString(uint32_t ip) {
+    struct in_addr in;
+    in.s_addr = htonl((uint32_t) ip);
+    return inet_ntoa(in);
 }
