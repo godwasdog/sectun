@@ -1,0 +1,24 @@
+{
+  "device": "sectun",
+  "host": "192.168.56.101",
+  "port": "1234",
+  "net": "10.8.0.3/16",
+  "mtu": "1380",
+  "mode": "client",
+  "encrypt": "chacha20",
+  "encryptKey": "test-password",
+  "userToken": "8webno3a",
+  "heartbeatInterval": "30",
+  "heartbeatTimeout": "60",
+  "transport": "auth+udp",
+  "upScript": "client-global_up.sh",
+  "downScript": "client-global_down.sh",
+  "kcp": {
+    "nodelay": "1",
+    "interval": "20",
+    "resend": "2",
+    "nc": "1",
+    "sndwnd": "1024",
+    "rcvwnd": "1024"
+  }
+}
