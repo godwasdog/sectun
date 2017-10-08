@@ -116,7 +116,7 @@ ssize_t hearbeatForwardRead(char *buffer, size_t len, void *context) {
 
 #ifdef DEBUG_HEARTBEAT
         client_info_t *client = (client_info_t *) context;
-        debugHeartbeat("recv hearbeat msg from user toke [%.*s] tunip [%s]",
+        debugHeartbeat("recv hearbeat msg from user token [%.*s] tunip [%s]",
                        AUTH_USERTOKEN_LEN, client->userToken, ipToString(client->tunIp));
 #endif
 
