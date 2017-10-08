@@ -94,7 +94,8 @@ static ssize_t authWriteData(char *buffer, size_t len, void *context) {
     // copy user token
     memcpy(buffer + len, client->userToken, AUTH_USERTOKEN_LEN);
     // copy tun ip
-    memcpy(buffer + len + AUTH_USERTOKEN_LEN, &(client->tunIp), AUTH_TUNIP_LEN);
+    uint32_t tunIp = htonl(client->tunIp);
+    memcpy(buffer + len + AUTH_USERTOKEN_LEN, &tunIp, AUTH_TUNIP_LEN);
 
     len += AUTH_USERTOKEN_LEN + AUTH_TUNIP_LEN;
 
@@ -116,7 +117,7 @@ static ssize_t authWriteData(char *buffer, size_t len, void *context) {
 static ssize_t authForwardRead(char *buffer, size_t len, void *context) {
 
     // verify whether packet contains valid user token
-    uint32_t tunIp = (uint32_t) *(buffer + len - AUTH_TUNIP_LEN);
+    uint32_t tunIp = ntohl((uint32_t) *(buffer + len - AUTH_TUNIP_LEN));
     const char *token = buffer + len - AUTH_TUNIP_LEN - AUTH_USERTOKEN_LEN;
 
     client_info_t *client = sectunAuthFindClientByTunIp(tunIp);
